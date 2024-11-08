@@ -23,7 +23,7 @@ local function get_example_data()
     return schematic
 end
 
-sc = get_example_data()
+local sc = get_example_data()
 for i, row in ipairs(sc) do
     for j = 1, #row do
         io.write(row[j])
@@ -98,6 +98,10 @@ function find_tokens(schematic)
     end
     return number_tokens, symbol_tokens
 end
+
+-- ----------------------------------------------------------------------------
+-- MAIN PROGRAM
+-- ----------------------------------------------------------------------------
 
 local number_tokens, symbol_tokens = find_tokens(sc)
 
