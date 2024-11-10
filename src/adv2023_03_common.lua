@@ -1,5 +1,6 @@
 #!/opt/homebrew/bin/lua
-local function to_array_of_char_arrays(str)
+local M = {}
+function M.to_array_of_char_arrays(str)
     local schematic = {}
 
     for line in str:gmatch("([^\n]+)") do
@@ -12,36 +13,19 @@ local function to_array_of_char_arrays(str)
     return schematic
 end
 
-local example_data = [[467.114./.
-..*.......
-..35..633.
-......#...
-617*......
-.....+.58.
-..592.....
-......755.
-...$.*....
-.664.598..]]
-
-
--- local sc = to_array_of_char_arrays(example_data)
--- for i, row in ipairs(sc) do
---     for j = 1, #row do
---         io.write(row[j])
---     end
---     print()
--- end
-
-
-function is_digit(c)
+function M.is_digit(c)
     return c:match("%d") ~= nil
 end
 
-function is_symbol(c)
-    return c:match("%d") == nil and c ~= "."
+function M.equal_symbols(s1, s2) 
+    return s1.row == s2.row and s1.col == s2.col
 end
 
-function find_tokens(schematic)
+-- function M.is_symbol(c)
+--     return c:match("%d") == nil and c ~= "."
+-- end
+
+function M.find_tokens(schematic, is_symbol)
     -- find tokens and store their start position and length and type
     local number_tokens = {}
     local symbol_tokens = {}
@@ -50,7 +34,7 @@ function find_tokens(schematic)
     for i, row in ipairs(schematic) do
         for j, item in ipairs(row) do
             if state == "BETWEEN_TOKENS" then
-                if is_digit(item) then
+                if M.is_digit(item) then
                     current_token = {
                         row = i, col = j, number = item
                     }
@@ -66,7 +50,7 @@ function find_tokens(schematic)
             end
 
             if state == "IN_NUMBER_TOKEN" then
-                if is_digit(item) and current_token then
+                if M.is_digit(item) and current_token then
                     current_token.number = current_token.number .. item
                     goto continue
                 end
@@ -108,7 +92,7 @@ function find_tokens(schematic)
     return number_tokens, symbol_tokens
 end
 
-local function is_adjacent(token, symbol)
+function M.is_adjacent(token, symbol)
     if symbol.row >= token.row - 1 and symbol.row <= token.row + 1 then
         if symbol.col >= token.col - 1 and symbol.col <= token.col + token.length  then
             return true
@@ -117,13 +101,13 @@ local function is_adjacent(token, symbol)
     return false
 end
 
-local function get_part_numbers(number_tokens, symbol_tokens)
+function M.get_part_numbers(number_tokens, symbol_tokens)
     local part_numbers = {}
     for i, number_token in ipairs(number_tokens) do
         for j, symbol_token in ipairs(symbol_tokens) do
-            if is_adjacent(number_token, symbol_token) then
+            if M.is_adjacent(number_token, symbol_token) then
                 -- print("+++: ", tonumber(number_token.number))
-                table.insert(part_numbers, tonumber(number_token.number))
+                table.insert(part_numbers, { value = tonumber(number_token.number), symbol = symbol_token })
                 goto continue
             end
         end
@@ -132,47 +116,4 @@ local function get_part_numbers(number_tokens, symbol_tokens)
     end
     return part_numbers
 end
-
-local function run(testdata)
-    local number_tokens, symbol_tokens = find_tokens(testdata)
-    -- for i, n in ipairs(number_tokens) do print(n.number) end
-
-    local part_numbers = get_part_numbers(number_tokens, symbol_tokens)
-    for i, n in ipairs(part_numbers) do
-        if n > 999 then
-        print(string.format("%d. %d", i, n))
-        end
-        -- if i > 100 then break end
-    end
-
-    local sum_part_numbers = 0
-    for i, n in ipairs(part_numbers) do
-        sum_part_numbers = sum_part_numbers + n
-    end
-    return sum_part_numbers
-end
-
-
--- ----------------------------------------------------------------------------
--- MAIN PROGRAM
--- ----------------------------------------------------------------------------
-
--- local number_tokens, symbol_tokens = find_tokens(sc)
--- local part_numbers = get_part_numbers(number_tokens, symbol_tokens)
-
--- -- Test
--- local sum_part_numbers = 0
--- for i, n in ipairs(part_numbers) do
---     sum_part_numbers = sum_part_numbers + n
--- end
-
-print("Example run")
-print("  Sum of all example part numbers: ", run(to_array_of_char_arrays(example_data)))
-assert(run(to_array_of_char_arrays(example_data)) == 4361)
-
--- -- Real Run
-print("Real Run")
-local f = io.open("../testdata/adv2023_03_01.txt", "r")
-local sc_real = f:read("*all")
-
-print("  Sum of all part numbers: ", run(to_array_of_char_arrays(sc_real)))
+return M
